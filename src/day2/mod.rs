@@ -33,7 +33,7 @@ pub fn part2() -> usize {
     passwords.filter(|p| {
         let a = p.password.chars().nth(p.lo - 1).unwrap();
         let b = p.password.chars().nth(p.hi - 1).unwrap();
-        (a == p.letter && b != p.letter) || (a != p.letter && b == p.letter)
+        (a == p.letter) ^ (b == p.letter)
     }).count()
 }
 
