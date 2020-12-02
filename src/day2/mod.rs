@@ -1,6 +1,6 @@
 extern crate recap;
 
-static INPUT: &str = std::include_str!("day2.txt");
+static INPUT: &str = std::include_str!("input.txt");
 
 use recap::Recap;
 use serde::Deserialize;

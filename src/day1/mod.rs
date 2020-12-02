@@ -2,7 +2,7 @@ extern crate itertools;
 
 use itertools::Itertools;
 
-static INPUT: &str = std::include_str!("day1.txt");
+static INPUT: &str = std::include_str!("input.txt");
 
 pub fn part1() -> i64 {
     let numbers = INPUT.lines().map(|l| l.parse::<i64>().unwrap()).collect::<Vec<_>>();

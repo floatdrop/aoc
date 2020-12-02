@@ -1,4 +1,4 @@
-use aoc::day2;
+mod day2;
 
 fn main() {
     println!("Day 2 (part 1): {}", day2::part1());
