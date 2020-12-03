@@ -6,16 +6,10 @@ pub fn count_trees(right: usize, down: usize) -> usize {
     let width = rows.iter().next().unwrap().len();
     let height = rows.len();
 
-    let mut count = 0;
-
-    for (i, y) in (0..height).step_by(down).enumerate() {
+    (0..height).step_by(down).enumerate().map(|(i, y)| {
         let x = i * right % width;
-        if rows[y].chars().nth(x).unwrap() == '#' {
-            count += 1;
-        }
-    }
-
-    count
+        rows[y].chars().nth(x).unwrap()
+    }).filter(|&c| c == '#').count()
 }
 
 pub fn part1() -> usize {
