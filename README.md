@@ -1,4 +1,4 @@
-# aoc
+# aoc [![Build Status](https://travis-ci.org/floatdrop/aoc.svg?branch=master)](https://travis-ci.org/floatdrop/aoc)
 
 Repository with code for Advent of Code 2020.
 
