@@ -6,25 +6,16 @@ pub fn count_trees(right: usize, down: usize) -> usize {
     let width = rows.iter().next().unwrap().len();
     let height = rows.len();
 
-    let mut x = 0;
-    let mut y = 0;
     let mut count = 0;
 
-    while y < height {
+    for (i, y) in (0..height).step_by(down).enumerate() {
+        let x = i * right % width;
         if rows[y].chars().nth(x).unwrap() == '#' {
             count += 1;
-        }
-
-        x += right;
-        y += down;
-
-        if x >= width {
-            x = x - width
         }
     }
 
     count
-
 }
 
 pub fn part1() -> usize {
@@ -50,6 +41,6 @@ mod tests {
 
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part1(), 3154761400);
+        assert_eq!(part2(), 3154761400);
     }
 }
