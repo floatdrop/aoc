@@ -1,3 +1,7 @@
+extern crate itertools;
+
+use itertools::iterate;
+
 static INPUT: &str = std::include_str!("input.txt");
 
 pub fn count_trees(right: usize, down: usize) -> usize {
@@ -6,10 +10,10 @@ pub fn count_trees(right: usize, down: usize) -> usize {
     let width = rows.iter().next().unwrap().len();
     let height = rows.len();
 
-    (0..height).step_by(down).enumerate().map(|(i, y)| {
-        let x = i * right % width;
-        rows[y].chars().nth(x).unwrap()
-    }).filter(|&c| c == '#').count()
+    iterate((0, 0), |(x, y)| ((x + right) % width, y + down))
+        .take_while(|&(_, y)| y < height)
+        .filter(|&(x, y)| rows[y].chars().nth(x).unwrap() == '#')
+        .count()
 }
 
 pub fn part1() -> usize {
