@@ -9,3 +9,4 @@ See posts about each day:
 
 - Day 1: https://floatdrop.dev/blog/2020/aoc-day-1/
 - Day 2: https://floatdrop.dev/blog/2020/aoc-day-2/
+- Day 3: https://floatdrop.dev/blog/2020/aoc-day-3/
