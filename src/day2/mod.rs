@@ -1,12 +1,12 @@
-extern crate recap;
+extern crate serde;
+extern crate serde_scan;
+
+use serde::{Deserialize};
+use serde_scan::scan;
 
 static INPUT: &str = std::include_str!("input.txt");
 
-use recap::Recap;
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize, Recap)]
-#[recap(regex = r#"(?P<lo>\d+)\-(?P<hi>\d+) (?P<letter>[a-z]): (?P<password>.+)"#)]
+#[derive(Debug, Deserialize)]
 struct OTCASPolicy {
     lo: usize,
     hi: usize,
@@ -16,7 +16,8 @@ struct OTCASPolicy {
 
 pub fn part1() -> usize {
     let passwords = INPUT.lines().map(|l| {
-        l.parse::<OTCASPolicy>().unwrap()
+        let policy: OTCASPolicy = scan!("{}-{} {}: {}" <- l).unwrap();
+        policy
     });
     
     passwords.filter(|p| {
@@ -27,7 +28,8 @@ pub fn part1() -> usize {
 
 pub fn part2() -> usize {
     let passwords = INPUT.lines().map(|l| {
-        l.parse::<OTCASPolicy>().unwrap()
+        let policy: OTCASPolicy = scan!("{}-{} {}: {}" <- l).unwrap();
+        policy
     });
     
     passwords.filter(|p| {
