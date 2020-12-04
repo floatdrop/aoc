@@ -22,67 +22,61 @@ pub fn part2() -> usize {
         static ref PID_RE: Regex = Regex::new(r"pid:(\d{9})\b").unwrap();
     }
 
-    let passports = INPUT.split("\n\n");
-
-    let mut count = 0;
-
-    for s in passports {
+    INPUT.split("\n\n").filter(|s| {
         if let Some(c) = BYR_RE.captures(&s) {
             let byr = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
             if !(1920..=2002).contains(&byr) {
-                continue;
+                return false;
             }
         } else {
-            continue;
+            return false;
         }
 
         if let Some(c) = IYR_RE.captures(&s) {
             let iyr = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
             if !(2010..=2020).contains(&iyr) {
-                continue;
+                return false;
             }
         } else {
-            continue;
+            return false;
         }
 
         if let Some(c) = EYR_RE.captures(&s) {
             let eyr = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
             if !(2020..=2030).contains(&eyr) {
-                continue;
+                return false;
             }
         } else {
-            continue;
+            return false;
         }
 
         if let Some(c) = HGT_RE.captures(&s) {
             let hgt = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
             let units = c.get(2).unwrap().as_str();
             if units == "cm" && !(150..=193).contains(&hgt) {
-                continue;
+                return false;
             }
             if units == "in" && !(59..=76).contains(&hgt) {
-                continue;
+                return false;
             }
         } else {
-            continue;
+            return false;
         }
 
         if !HCL_RE.is_match(&s) {
-            continue;
+            return false;
         }
 
         if !ECL_RE.is_match(&s) {
-            continue;
+            return false;
         }
 
         if !PID_RE.is_match(&s) {
-            continue;
+            return false;
         }
-        
-        count += 1
-    }
 
-    count
+        true
+    }).count()
 }
 
 #[cfg(test)]
