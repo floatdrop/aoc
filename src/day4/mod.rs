@@ -60,14 +60,14 @@ impl FromStr for Passport {
 
         if map
             .iter()
-            .map(|(k, v)| match k {
-                &"byr" => check_year(v, 1920..=2002),
-                &"iyr" => check_year(v, 2010..=2020),
-                &"eyr" => check_year(v, 2020..=2030),
-                &"hgt" => check_height(v),
-                &"hcl" => HCL_RE.is_match(v),
-                &"ecl" => ECL_RE.is_match(v),
-                &"pid" => PID_RE.is_match(v),
+            .map(|(&k, &v)| match k {
+                "byr" => check_year(v, 1920..=2002),
+                "iyr" => check_year(v, 2010..=2020),
+                "eyr" => check_year(v, 2020..=2030),
+                "hgt" => check_height(v),
+                "hcl" => HCL_RE.is_match(v),
+                "ecl" => ECL_RE.is_match(v),
+                "pid" => PID_RE.is_match(v),
                 _ => true,
             })
             .any(|check| check == false) {
