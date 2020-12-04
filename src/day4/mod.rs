@@ -1,5 +1,9 @@
 use regex::Regex;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
+use std::str::FromStr;
+use itertools::Itertools;
+use scan_fmt::scan_fmt;
 
 static INPUT: &str = std::include_str!("input.txt");
 
@@ -11,72 +15,71 @@ pub fn part1() -> usize {
     }).count()
 }
 
-pub fn part2() -> usize {
-    lazy_static! {
-        static ref BYR_RE: Regex = Regex::new(r"byr:(\d{4})\b").unwrap();
-        static ref IYR_RE: Regex = Regex::new(r"iyr:(\d{4})\b").unwrap();
-        static ref EYR_RE: Regex = Regex::new(r"eyr:(\d{4})\b").unwrap();
-        static ref HGT_RE: Regex = Regex::new(r"hgt:(\d{2,3})(cm|in)\b").unwrap();
-        static ref HCL_RE: Regex = Regex::new(r"hcl:#([a-z0-9]{6})\b").unwrap();
-        static ref ECL_RE: Regex = Regex::new(r"ecl:(amb|blu|brn|gry|grn|hzl|oth)\b").unwrap();
-        static ref PID_RE: Regex = Regex::new(r"pid:(\d{9})\b").unwrap();
+#[derive(Debug)]
+pub struct Passport;
+
+#[derive(Debug, Clone)]
+pub struct ParsePassportError;
+
+pub fn check_year(s: &str, range: std::ops::RangeInclusive<i64>) -> bool {
+    s.parse::<i64>().and_then(|year| Ok(range.contains(&year))).unwrap_or(false)
+}
+
+pub fn check_height(s: &str) -> bool {
+    if let Ok((height, unit)) = scan_fmt!(s, "{d}{}", usize, String) {
+        return match unit.as_str() {
+            "cm" => (150..=193).contains(&height),
+            "in" => (59..=76).contains(&height),
+            _ => false
+        }
     }
+    false
+}
 
-    INPUT.split("\n\n").filter(|s| {
-        if let Some(c) = BYR_RE.captures(&s) {
-            let byr = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
-            if !(1920..=2002).contains(&byr) {
-                return false;
+impl FromStr for Passport {
+    type Err = ParsePassportError;
+    
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        lazy_static! {
+            static ref HCL_RE: Regex = Regex::new(r"^#([a-z0-9]{6})$").unwrap();
+            static ref ECL_RE: Regex = Regex::new(r"^(amb|blu|brn|gry|grn|hzl|oth)$").unwrap();
+            static ref PID_RE: Regex = Regex::new(r"^(\d{9})$").unwrap();
+        }
+
+        let map: HashMap<&str, &str> = s.split_whitespace()
+            .filter_map(|field| {
+                field.splitn(2, ":").collect_tuple::<(_, _)>()
+            })
+            .collect();
+
+        if !["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
+            .iter()
+            .all(|&k| map.contains_key(k)) {
+                return Err(ParsePassportError);
             }
-        } else {
-            return false;
-        }
 
-        if let Some(c) = IYR_RE.captures(&s) {
-            let iyr = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
-            if !(2010..=2020).contains(&iyr) {
-                return false;
+        if map
+            .iter()
+            .map(|(k, v)| match k {
+                &"byr" => check_year(v, 1920..=2002),
+                &"iyr" => check_year(v, 2010..=2020),
+                &"eyr" => check_year(v, 2020..=2030),
+                &"hgt" => check_height(v),
+                &"hcl" => HCL_RE.is_match(v),
+                &"ecl" => ECL_RE.is_match(v),
+                &"pid" => PID_RE.is_match(v),
+                _ => true,
+            })
+            .any(|check| check == false) {
+                return Err(ParsePassportError);
             }
-        } else {
-            return false;
-        }
 
-        if let Some(c) = EYR_RE.captures(&s) {
-            let eyr = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
-            if !(2020..=2030).contains(&eyr) {
-                return false;
-            }
-        } else {
-            return false;
-        }
+        Ok(Passport{})
+    }
+}
 
-        if let Some(c) = HGT_RE.captures(&s) {
-            let hgt = c.get(1).unwrap().as_str().parse::<i64>().unwrap();
-            let units = c.get(2).unwrap().as_str();
-            if units == "cm" && !(150..=193).contains(&hgt) {
-                return false;
-            }
-            if units == "in" && !(59..=76).contains(&hgt) {
-                return false;
-            }
-        } else {
-            return false;
-        }
-
-        if !HCL_RE.is_match(&s) {
-            return false;
-        }
-
-        if !ECL_RE.is_match(&s) {
-            return false;
-        }
-
-        if !PID_RE.is_match(&s) {
-            return false;
-        }
-
-        true
-    }).count()
+pub fn part2() -> usize {
+    INPUT.split("\n\n").filter_map(|s| { Passport::from_str(s).ok() }).count()
 }
 
 #[cfg(test)]

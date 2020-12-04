@@ -1,6 +1,3 @@
-extern crate serde;
-extern crate serde_scan;
-
 use serde::{Deserialize};
 use serde_scan::scan;
 
