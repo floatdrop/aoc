@@ -119,11 +119,11 @@ mod tests {
 
     #[test]
     fn check_part1_answer() {
-        assert_eq!(part1(), 265);
+        assert_eq!(part1(), 190);
     }
 
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part2(), 3154761400);
+        assert_eq!(part2(), 121);
     }
 }
