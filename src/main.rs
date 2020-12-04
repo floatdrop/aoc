@@ -1,6 +1,6 @@
-mod day3;
+mod day4;
 
 fn main() {
-    println!("Day 3 (part 1): {}", day3::part1());
-    println!("Day 3 (part 2): {}", day3::part2());
+    println!("Day 4 (part 1): {}", day4::part1());
+    println!("Day 4 (part 2): {}", day4::part2());
 }
