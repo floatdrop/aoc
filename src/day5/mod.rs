@@ -13,14 +13,12 @@ pub fn part1() -> usize {
                 _ => unreachable!(),
             }
         });
-        // println!("{} -> {:?}", s, pos);
         (pos.0, pos.2)
     })
-    .map(|(x, y)| {
-        y * 8 + x
-    })
+    .map(|(x, y)| y * 8 + x)
     .max().unwrap()
 }
+
 pub fn part2() -> usize {
     let ids: HashSet<usize> = INPUT.lines().map(|s| {
         let pos = s.chars().fold((0, 8, 0, 128), |acc, c| {
@@ -34,13 +32,11 @@ pub fn part2() -> usize {
         });
         (pos.0, pos.2)
     })
-    .map(|(x, y)| {
-        y * 8 + x
-    })
+    .map(|(x, y)| y * 8 + x)
     .collect();
 
     let all: HashSet<usize> = (100..900).collect();
-    all.difference(&ids).next().unwrap()
+    *all.difference(&ids).next().unwrap()
 }
 
 #[cfg(test)]
