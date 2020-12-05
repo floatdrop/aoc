@@ -27,7 +27,10 @@ pub fn part2() -> usize {
     })
     .collect();
 
-    let all: HashSet<usize> = (100..900).collect();
+    let min = *ids.iter().min().unwrap();
+    let max = *ids.iter().max().unwrap();
+
+    let all: HashSet<usize> = (min..max).collect();
     *all.difference(&ids).next().unwrap()
 }
 
