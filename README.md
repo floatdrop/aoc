@@ -11,3 +11,4 @@ See posts about each day:
 - Day 2: https://floatdrop.dev/blog/2020/aoc-day-2/
 - Day 3: https://floatdrop.dev/blog/2020/aoc-day-3/
 - Day 4: https://floatdrop.dev/blog/2020/aoc-day-4/
+- Day 5: https://floatdrop.dev/blog/2020/aoc-day-5/
