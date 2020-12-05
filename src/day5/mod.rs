@@ -49,7 +49,7 @@ mod tests {
     }
     
     #[test]
-    fn check_part1_answer() {
+    fn check_part2_answer() {
         assert_eq!(part2(), 519);
     }
 }
