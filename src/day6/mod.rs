@@ -39,11 +39,11 @@ mod tests {
 
     #[test]
     fn check_part1_answer() {
-        assert_eq!(part1(), 906);
+        assert_eq!(part1(), 6763);
     }
     
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part2(), 519);
+        assert_eq!(part2(), 3512);
     }
 }
