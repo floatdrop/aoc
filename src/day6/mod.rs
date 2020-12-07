@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 static INPUT: &str = std::include_str!("input.txt");
 
@@ -7,10 +7,10 @@ pub fn part1() -> usize {
         .split("\n\n")
         .map(|g| {
             g.chars()
-             .filter(|c| ('a'..='z').contains(c))
-             .collect::<HashSet<_>>()
-             .iter()
-             .count()
+                .filter(|c| ('a'..='z').contains(c))
+                .collect::<HashSet<_>>()
+                .iter()
+                .count()
         })
         .sum()
 }
@@ -20,7 +20,8 @@ pub fn part2() -> usize {
         .split("\n\n")
         .map(|group| {
             let people = group.lines().count();
-            group.chars()
+            group
+                .chars()
                 .filter(|c| ('a'..='z').contains(c))
                 .fold(HashMap::new(), |mut acc, c| {
                     *acc.entry(c).or_insert(0) += 1;
@@ -41,7 +42,7 @@ mod tests {
     fn check_part1_answer() {
         assert_eq!(part1(), 6763);
     }
-    
+
     #[test]
     fn check_part2_answer() {
         assert_eq!(part2(), 3512);

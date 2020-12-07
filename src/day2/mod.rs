@@ -1,4 +1,4 @@
-use serde::{Deserialize};
+use serde::Deserialize;
 use serde_scan::scan;
 
 static INPUT: &str = std::include_str!("input.txt");
@@ -8,7 +8,7 @@ struct OTCASPolicy {
     lo: usize,
     hi: usize,
     letter: char,
-    password: String
+    password: String,
 }
 
 pub fn part1() -> usize {
@@ -16,11 +16,13 @@ pub fn part1() -> usize {
         let policy: OTCASPolicy = scan!("{}-{} {}: {}" <- l).unwrap();
         policy
     });
-    
-    passwords.filter(|p| {
-        let count = p.password.matches(p.letter).count();
-        p.lo <= count && count <= p.hi
-    }).count()
+
+    passwords
+        .filter(|p| {
+            let count = p.password.matches(p.letter).count();
+            p.lo <= count && count <= p.hi
+        })
+        .count()
 }
 
 pub fn part2() -> usize {
@@ -28,12 +30,14 @@ pub fn part2() -> usize {
         let policy: OTCASPolicy = scan!("{}-{} {}: {}" <- l).unwrap();
         policy
     });
-    
-    passwords.filter(|p| {
-        let a = p.password.chars().nth(p.lo - 1).unwrap();
-        let b = p.password.chars().nth(p.hi - 1).unwrap();
-        (a == p.letter) ^ (b == p.letter)
-    }).count()
+
+    passwords
+        .filter(|p| {
+            let a = p.password.chars().nth(p.lo - 1).unwrap();
+            let b = p.password.chars().nth(p.hi - 1).unwrap();
+            (a == p.letter) ^ (b == p.letter)
+        })
+        .count()
 }
 
 #[cfg(test)]

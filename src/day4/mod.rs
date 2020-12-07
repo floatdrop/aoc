@@ -1,18 +1,25 @@
-use regex::Regex;
+use itertools::Itertools;
 use lazy_static::lazy_static;
+use regex::Regex;
+use scan_fmt::scan_fmt;
 use std::collections::HashMap;
 use std::str::FromStr;
-use itertools::Itertools;
-use scan_fmt::scan_fmt;
 
 static INPUT: &str = std::include_str!("input.txt");
 
 pub fn part1() -> usize {
-    INPUT.split("\n\n").filter(|s| {
-        s.contains("byr:") && s.contains("iyr:") && s.contains("eyr:")
-            && s.contains("hgt:") && s.contains("hcl:") && s.contains("ecl:")
+    INPUT
+        .split("\n\n")
+        .filter(|s| {
+            s.contains("byr:")
+                && s.contains("iyr:")
+                && s.contains("eyr:")
+                && s.contains("hgt:")
+                && s.contains("hcl:")
+                && s.contains("ecl:")
                 && s.contains("pid:")
-    }).count()
+        })
+        .count()
 }
 
 #[derive(Debug)]
@@ -22,7 +29,9 @@ pub struct Passport;
 pub struct ParsePassportError;
 
 pub fn check_year(s: &str, range: std::ops::RangeInclusive<i64>) -> bool {
-    s.parse::<i64>().and_then(|year| Ok(range.contains(&year))).unwrap_or(false)
+    s.parse::<i64>()
+        .and_then(|year| Ok(range.contains(&year)))
+        .unwrap_or(false)
 }
 
 pub fn check_height(s: &str) -> bool {
@@ -30,15 +39,15 @@ pub fn check_height(s: &str) -> bool {
         return match unit.as_str() {
             "cm" => (150..=193).contains(&height),
             "in" => (59..=76).contains(&height),
-            _ => false
-        }
+            _ => false,
+        };
     }
     false
 }
 
 impl FromStr for Passport {
     type Err = ParsePassportError;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         lazy_static! {
             static ref HCL_RE: Regex = Regex::new(r"^#([a-z0-9]{6})$").unwrap();
@@ -46,17 +55,17 @@ impl FromStr for Passport {
             static ref PID_RE: Regex = Regex::new(r"^(\d{9})$").unwrap();
         }
 
-        let map: HashMap<&str, &str> = s.split_whitespace()
-            .filter_map(|field| {
-                field.splitn(2, ":").collect_tuple::<(_, _)>()
-            })
+        let map: HashMap<&str, &str> = s
+            .split_whitespace()
+            .filter_map(|field| field.splitn(2, ":").collect_tuple::<(_, _)>())
             .collect();
 
         if !["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
             .iter()
-            .all(|&k| map.contains_key(k)) {
-                return Err(ParsePassportError);
-            }
+            .all(|&k| map.contains_key(k))
+        {
+            return Err(ParsePassportError);
+        }
 
         if map
             .iter()
@@ -70,16 +79,20 @@ impl FromStr for Passport {
                 "pid" => PID_RE.is_match(v),
                 _ => true,
             })
-            .any(|check| check == false) {
-                return Err(ParsePassportError);
-            }
+            .any(|check| check == false)
+        {
+            return Err(ParsePassportError);
+        }
 
-        Ok(Passport{})
+        Ok(Passport {})
     }
 }
 
 pub fn part2() -> usize {
-    INPUT.split("\n\n").filter_map(|s| { Passport::from_str(s).ok() }).count()
+    INPUT
+        .split("\n\n")
+        .filter_map(|s| Passport::from_str(s).ok())
+        .count()
 }
 
 #[cfg(test)]

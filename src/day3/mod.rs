@@ -6,7 +6,7 @@ static INPUT: &str = std::include_str!("input.txt");
 
 pub fn count_trees(right: usize, down: usize) -> usize {
     let rows: Vec<&str> = INPUT.lines().collect();
-    
+
     let width = rows.iter().next().unwrap().len();
     let height = rows.len();
 
@@ -21,11 +21,11 @@ pub fn part1() -> usize {
 }
 
 pub fn part2() -> usize {
-    count_trees(1, 1) * 
-    count_trees(3, 1) * 
-    count_trees(5, 1) * 
-    count_trees(7, 1) * 
-    count_trees(1, 2) 
+    count_trees(1, 1)
+        * count_trees(3, 1)
+        * count_trees(5, 1)
+        * count_trees(7, 1)
+        * count_trees(1, 2)
 }
 
 #[cfg(test)]
