@@ -56,7 +56,7 @@ pub fn part1() -> usize {
 
 pub fn part2() -> usize {
     let rules = parse();
-    count_bags(&rules, MY_COLOR)
+    count_bags(&rules, MY_COLOR) - 1
 }
 
 #[cfg(test)]
