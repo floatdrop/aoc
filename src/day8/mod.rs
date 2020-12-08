@@ -1,111 +1,102 @@
-use std::collections::HashSet;
+use itertools::Itertools;
+use std::{num::ParseIntError, str::FromStr};
 
 static INPUT: &str = std::include_str!("input.txt");
 
-#[derive(Debug)]
-pub enum OpCode {
-    Nop,
-    Acc,
-    Jmp,
+#[derive(Debug, Clone)]
+enum Instruction {
+    Nop(i64),
+    Jmp(i64),
+    Acc(i64),
 }
 
-type Programm = Vec<(OpCode, i64)>;
+#[derive(Debug, Clone)]
+struct ParseInstructionError;
 
-pub fn parse() -> Programm {
-    INPUT
-        .lines()
-        .map(|line| {
-            let mut p = line.split(" ");
+impl From<ParseIntError> for ParseInstructionError {
+    fn from(_: ParseIntError) -> ParseInstructionError {
+        ParseInstructionError {}
+    }
+}
 
-            let op = match p.next() {
-                Some(code) => match code {
-                    "nop" => OpCode::Nop,
-                    "acc" => OpCode::Acc,
-                    "jmp" => OpCode::Jmp,
-                    _ => unreachable!(),
-                },
-                None => unreachable!(),
-            };
+impl FromStr for Instruction {
+    type Err = ParseInstructionError;
 
-            let arg = match p.next() {
-                Some(v) => v.parse::<i64>().unwrap(),
-                None => unreachable!(),
-            };
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (code, argument) = s
+            .split(' ')
+            .take(2)
+            .collect_tuple::<(_, _)>()
+            .ok_or(ParseInstructionError)?;
 
-            (op, arg)
-        })
-        .collect()
+        let x = argument.parse::<i64>()?;
+
+        match code {
+            "nop" => Ok(Instruction::Nop(x)),
+            "jmp" => Ok(Instruction::Jmp(x)),
+            "acc" => Ok(Instruction::Acc(x)),
+            _ => Err(ParseInstructionError),
+        }
+    }
+}
+
+type Program = Vec<Instruction>;
+
+enum ExitMode {
+    RevisitedInstruction,
+    EndOfProgram,
+}
+
+fn execute_programm(program: &Program) -> (ExitMode, i64) {
+    let mut ip = 0;
+    let mut accumulator: i64 = 0;
+    let mut visited = vec![false; program.len()];
+
+    loop {
+        if visited[ip] {
+            return (ExitMode::RevisitedInstruction, accumulator);
+        }
+        visited[ip] = true;
+        match program[ip] {
+            Instruction::Nop(_) => ip += 1,
+            Instruction::Jmp(x) => ip = ((ip as i64) + x) as usize,
+            Instruction::Acc(x) => {
+                accumulator += x;
+                ip += 1;
+            }
+        }
+
+        if ip >= program.len() {
+            return (ExitMode::EndOfProgram, accumulator);
+        }
+    }
 }
 
 pub fn part1() -> i64 {
-    let programm = parse();
-
-    let mut visited: HashSet<usize> = HashSet::new();
-    let mut ip = 0;
-    let mut reg = 0;
-    while ip < programm.len() {
-        if visited.contains(&ip) {
-            break;
-        }
-        visited.insert(ip);
-        match programm[ip] {
-            (OpCode::Acc, x) => {
-                reg += x;
-                ip += 1;
-            }
-            (OpCode::Jmp, x) => {
-                ip = ((ip as i64) + x) as usize;
-            }
-            (OpCode::Nop, _) => ip += 1,
-        }
-    }
-    reg
+    let program = INPUT.split('\n').filter_map(|l| l.parse().ok()).collect();
+    execute_programm(&program).1
 }
 
 pub fn part2() -> i64 {
-    let mut programm = parse();
+    let program: Program = INPUT.split('\n').filter_map(|l| l.parse().ok()).collect();
 
-    let mut visited: HashSet<usize> = HashSet::new();
-    let mut ip = 0;
-    let mut reg = 0;
-    let mut mutated = 0;
-    match programm[mutated].0 {
-        OpCode::Nop => programm[mutated].0 = OpCode::Jmp,
-        OpCode::Jmp => programm[mutated].0 = OpCode::Nop,
-        OpCode::Acc => {}
-    }
+    (0..program.len())
+        .find_map(|index| {
+            let mut patched = program.clone();
+            patched[index] = match patched[index] {
+                Instruction::Nop(x) => Instruction::Jmp(x),
+                Instruction::Jmp(x) => Instruction::Nop(x),
+                Instruction::Acc(_) => {
+                    return None;
+                }
+            };
 
-    while ip < programm.len() {
-        if visited.contains(&ip) {
-            reg = 0;
-            ip = 0;
-            visited.clear();
-            match programm[mutated].0 {
-                OpCode::Nop => programm[mutated].0 = OpCode::Jmp,
-                OpCode::Jmp => programm[mutated].0 = OpCode::Nop,
-                OpCode::Acc => {}
+            match execute_programm(&patched) {
+                (ExitMode::RevisitedInstruction, _) => None,
+                (ExitMode::EndOfProgram, i) => Some(i),
             }
-            mutated += 1;
-            match programm[mutated].0 {
-                OpCode::Nop => programm[mutated].0 = OpCode::Jmp,
-                OpCode::Jmp => programm[mutated].0 = OpCode::Nop,
-                OpCode::Acc => {}
-            }
-            continue;
-        }
-        visited.insert(ip);
-        match programm[ip] {
-            (OpCode::Acc, x) => {
-                reg += x;
-                ip += 1;
-            }
-            (OpCode::Jmp, x) => {
-                ip = ((ip as i64) + x) as usize;
-            }
-            (OpCode::Nop, _) => ip += 1,
-        }
-    }
-    reg
+        })
+        .unwrap()
 }
 
 #[cfg(test)]
