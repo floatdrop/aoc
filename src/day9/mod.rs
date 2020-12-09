@@ -29,7 +29,7 @@ pub fn part1() -> i64 {
 }
 
 pub fn part2() -> i64 {
-    let target = part1();
+    let target = 26134589;
 
     let mut list: VecDeque<i64> = VecDeque::new();
 
