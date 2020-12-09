@@ -14,13 +14,13 @@ pub fn part1() -> i64 {
     *numbers
         .windows(26)
         .find_map(|g| {
-            let i = g.last().unwrap();
-            if g.iter()
-                .take(25)
+            let (number, preamble) = g.split_last()?;
+            if preamble
+                .iter()
                 .tuple_combinations::<(_, _)>()
-                .all(|(a, b)| a + b != *i)
+                .all(|(a, b)| a + b != *number)
             {
-                return Some(i);
+                return Some(number);
             }
 
             None

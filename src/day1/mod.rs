@@ -7,13 +7,13 @@ static INPUT: &str = std::include_str!("input.txt");
 pub fn part1() -> i64 {
     let numbers = INPUT
         .lines()
-        .map(|l| l.parse::<i64>().unwrap())
+        .filter_map(|l| l.parse::<i64>().ok())
         .collect::<Vec<_>>();
+
     let pair = numbers
         .iter()
         .tuple_combinations()
-        .filter(|&(a, b)| a + b == 2020)
-        .next()
+        .find(|&(a, b)| a + b == 2020)
         .unwrap();
 
     pair.0 * pair.1
@@ -22,13 +22,13 @@ pub fn part1() -> i64 {
 pub fn part2() -> i64 {
     let numbers = INPUT
         .lines()
-        .map(|l| l.parse::<i64>().unwrap())
+        .filter_map(|l| l.parse::<i64>().ok())
         .collect::<Vec<_>>();
+
     let tuple = numbers
         .iter()
         .tuple_combinations()
-        .filter(|&(a, b, c)| a + b + c == 2020)
-        .next()
+        .find(|&(a, b, c)| a + b + c == 2020)
         .unwrap();
 
     tuple.0 * tuple.1 * tuple.2
