@@ -67,11 +67,11 @@ mod tests {
 
     #[test]
     fn check_part1_answer() {
-        assert_eq!(part1(), 26134589);
+        assert_eq!(part1(), 1984);
     }
 
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part2(), 3535124);
+        assert_eq!(part2(), 3543369523456);
     }
 }
