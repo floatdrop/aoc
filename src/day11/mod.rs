@@ -82,7 +82,7 @@ impl Grid {
             .filter_map(|&(dx, dy)| {
                 let mut x = sx;
                 let mut y = sy;
-                while x >= 0 && x < self.width && y >= 0 && y < self.height {
+                loop {
                     x += dx;
                     y += dy;
 
@@ -94,8 +94,6 @@ impl Grid {
                         return None;
                     }
                 }
-
-                return None;
             })
             .collect()
     }
@@ -202,7 +200,6 @@ pub fn part2() -> usize {
     let mut grid = Grid::from_str(INPUT).unwrap();
 
     loop {
-        // println!("{}\n", grid);
         let new_grid = Grid::new(
             grid.map
                 .iter()
