@@ -78,10 +78,10 @@ impl Grid {
     fn adjacent_seats(&self, x: usize, y: usize) -> Vec<&Place> {
         DIRECTIONS
             .iter()
-            .filter_map(|d| {
+            .filter_map(|(dx, dy)| {
                 self.map
-                    .get(d.1.next(y))
-                    .and_then(|row| row.get(d.0.next(x)))
+                    .get(dy.next(y))
+                    .and_then(|row| row.get(dx.next(x)))
             })
             .collect()
     }
@@ -89,9 +89,9 @@ impl Grid {
     fn visible_seats(&self, x: usize, y: usize) -> Vec<&Place> {
         DIRECTIONS
             .iter()
-            .filter_map(|d| {
-                iterate((x, y), |&(x, y)| (d.0.next(x), d.1.next(y)))
-                    .map(|t| self.map.get(t.0).and_then(|row| row.get(t.1)))
+            .filter_map(|(dx, dy)| {
+                iterate((dx.next(x), dy.next(y)), |&(x, y)| (dx.next(x), dy.next(y)))
+                    .map(|(x, y)| self.map.get(y).and_then(|row| row.get(x)))
                     .while_some()
                     .find(|&p| p != &Place::Floor)
             })
