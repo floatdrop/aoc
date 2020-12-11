@@ -1,21 +1,37 @@
 use itertools::{iterate, Itertools};
 use std::{
-    collections::HashMap,
     fmt::{self, Display},
     str::FromStr,
 };
 
 static INPUT: &str = std::include_str!("input.txt");
 
-static DIRECTIONS: [(i64, i64); 8] = [
-    (-1, -1),
-    (0, -1),
-    (1, -1),
-    (-1, 0),
-    (1, 0),
-    (-1, 1),
-    (0, 1),
-    (1, 1),
+#[derive(Debug)]
+enum Direction {
+    Inc,
+    Dec,
+    Nop,
+}
+
+impl Direction {
+    fn next(&self, x: usize) -> usize {
+        match self {
+            Direction::Inc => x + 1,
+            Direction::Dec => x.wrapping_sub(1),
+            Direction::Nop => x,
+        }
+    }
+}
+
+static DIRECTIONS: [(Direction, Direction); 8] = [
+    (Direction::Dec, Direction::Dec),
+    (Direction::Nop, Direction::Dec),
+    (Direction::Inc, Direction::Dec),
+    (Direction::Dec, Direction::Nop),
+    (Direction::Inc, Direction::Nop),
+    (Direction::Dec, Direction::Inc),
+    (Direction::Nop, Direction::Inc),
+    (Direction::Inc, Direction::Inc),
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -50,38 +66,32 @@ impl Display for Place {
     }
 }
 
-type Position = (i64, i64);
-
 struct Grid {
-    map: HashMap<Position, Place>,
-    width: i64,
-    height: i64,
+    map: Vec<Vec<Place>>,
 }
 
 impl Grid {
-    fn new(map: HashMap<Position, Place>) -> Self {
-        let w = map.iter().map(|((x, _), _)| *x).max().unwrap_or(0);
-        let h = map.iter().map(|((_, y), _)| *y).max().unwrap_or(0);
-        Self {
-            map,
-            width: w + 1,
-            height: h + 1,
-        }
+    fn new(map: Vec<Vec<Place>>) -> Self {
+        Self { map }
     }
 
-    fn adjacent_seats(&self, x: i64, y: i64) -> Vec<&Place> {
+    fn adjacent_seats(&self, x: usize, y: usize) -> Vec<&Place> {
         DIRECTIONS
             .iter()
-            .filter_map(|&(dx, dy)| self.map.get(&(x - dx, y - dy)))
+            .filter_map(|d| {
+                self.map
+                    .get(d.1.next(y))
+                    .and_then(|row| row.get(d.0.next(x)))
+            })
             .collect()
     }
 
-    fn visible_seats(&self, sx: i64, sy: i64) -> Vec<&Place> {
+    fn visible_seats(&self, x: usize, y: usize) -> Vec<&Place> {
         DIRECTIONS
             .iter()
-            .filter_map(|&(dx, dy)| {
-                iterate((sx, sy), |&(x, y)| (x + dx, y + dy))
-                    .map(|t| self.map.get(&t))
+            .filter_map(|d| {
+                iterate((x, y), |&(x, y)| (d.0.next(x), d.1.next(y)))
+                    .map(|t| self.map.get(t.0).and_then(|row| row.get(t.1)))
                     .while_some()
                     .find(|&p| p != &Place::Floor)
             })
@@ -104,14 +114,7 @@ impl FromStr for Grid {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Grid::new(
             s.lines()
-                .enumerate()
-                .map(|(y, l)| {
-                    l.chars()
-                        .enumerate()
-                        .map(move |(x, c)| ((x as i64, y as i64), Place::from(&c)))
-                    // .filter(|(_, p)| p != &Place::Floor)
-                })
-                .flatten()
+                .map(|l| l.chars().map(|c| Place::from(&c)).collect())
                 .collect(),
         ))
     }
@@ -122,10 +125,9 @@ impl Display for Grid {
         write!(
             f,
             "{}",
-            (0..self.height)
-                .map(|y| (0..self.width)
-                    .map(|x| self.map.get(&(x, y)).unwrap_or(&Place::Floor).to_string())
-                    .join(""))
+            self.map
+                .iter()
+                .map(|row| row.iter().map(|p| p.to_string()).join(""))
                 .join("\n")
         )
     }
@@ -138,13 +140,14 @@ pub fn part1() -> usize {
         let new_grid = Grid::new(
             grid.map
                 .iter()
-                .map(|((x, y), p)| {
-                    (
-                        (*x, *y),
-                        match p {
+                .enumerate()
+                .map(|(y, row)| {
+                    row.iter()
+                        .enumerate()
+                        .map(|(x, p)| match p {
                             Place::EmptySeat => {
                                 if grid
-                                    .adjacent_seats(*x, *y)
+                                    .adjacent_seats(x, y)
                                     .iter()
                                     .all(|&p| p != &Place::OccupiedSeat)
                                 {
@@ -155,7 +158,7 @@ pub fn part1() -> usize {
                             }
                             Place::OccupiedSeat => {
                                 if grid
-                                    .adjacent_seats(*x, *y)
+                                    .adjacent_seats(x, y)
                                     .iter()
                                     .filter(|&p| *p == &Place::OccupiedSeat)
                                     .count()
@@ -167,8 +170,8 @@ pub fn part1() -> usize {
                                 }
                             }
                             Place::Floor => Place::Floor,
-                        },
-                    )
+                        })
+                        .collect()
                 })
                 .collect(),
         );
@@ -182,7 +185,8 @@ pub fn part1() -> usize {
 
     grid.map
         .iter()
-        .filter(|&(_, p)| p == &Place::OccupiedSeat)
+        .map(|row| row.iter().filter(|&p| p == &Place::OccupiedSeat))
+        .flatten()
         .count()
 }
 
@@ -193,13 +197,14 @@ pub fn part2() -> usize {
         let new_grid = Grid::new(
             grid.map
                 .iter()
-                .map(|((x, y), p)| {
-                    (
-                        (*x, *y),
-                        match p {
+                .enumerate()
+                .map(|(y, row)| {
+                    row.iter()
+                        .enumerate()
+                        .map(|(x, p)| match p {
                             Place::EmptySeat => {
                                 if grid
-                                    .visible_seats(*x, *y)
+                                    .visible_seats(x, y)
                                     .iter()
                                     .all(|&p| p != &Place::OccupiedSeat)
                                 {
@@ -210,7 +215,7 @@ pub fn part2() -> usize {
                             }
                             Place::OccupiedSeat => {
                                 if grid
-                                    .visible_seats(*x, *y)
+                                    .visible_seats(x, y)
                                     .iter()
                                     .filter(|&p| *p == &Place::OccupiedSeat)
                                     .count()
@@ -222,8 +227,8 @@ pub fn part2() -> usize {
                                 }
                             }
                             Place::Floor => Place::Floor,
-                        },
-                    )
+                        })
+                        .collect()
                 })
                 .collect(),
         );
@@ -237,7 +242,8 @@ pub fn part2() -> usize {
 
     grid.map
         .iter()
-        .filter(|&(_, p)| p == &Place::OccupiedSeat)
+        .map(|row| row.iter().filter(|&p| p == &Place::OccupiedSeat))
+        .flatten()
         .count()
 }
 
