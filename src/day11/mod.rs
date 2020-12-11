@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use itertools::{iterate, Itertools};
 use std::{
     collections::HashMap,
     fmt::{self, Display},
@@ -80,20 +80,10 @@ impl Grid {
         DIRECTIONS
             .iter()
             .filter_map(|&(dx, dy)| {
-                let mut x = sx;
-                let mut y = sy;
-                loop {
-                    x += dx;
-                    y += dy;
-
-                    if let Some(p) = self.map.get(&(x, y)) {
-                        if p != &Place::Floor {
-                            return Some(p);
-                        }
-                    } else {
-                        return None;
-                    }
-                }
+                iterate((sx, sy), |&(x, y)| (x + dx, y + dy))
+                    .map(|t| self.map.get(&t))
+                    .while_some()
+                    .find(|&p| p != &Place::Floor)
             })
             .collect()
     }
