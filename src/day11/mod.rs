@@ -1,141 +1,189 @@
-use std::collections::HashMap;
+use itertools::Itertools;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    str::FromStr,
+};
 
 static INPUT: &str = std::include_str!("input.txt");
 
-type Grid = HashMap<(i64, i64), Position>;
+static DIRECTIONS: [(i64, i64); 8] = [
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+    (-1, 0),
+    (1, 0),
+    (-1, 1),
+    (0, 1),
+    (1, 1),
+];
 
-type Visibility = HashMap<(i64, i64), Vec<(i64, i64)>>;
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Place {
+    Floor,
+    EmptySeat,
+    OccupiedSeat,
+}
 
-fn display(grid: &Grid) {
-    let w = *grid.iter().map(|((x, _), _)| x).max().unwrap();
-    let h = *grid.iter().map(|((_, y), _)| y).max().unwrap();
-
-    for j in 0..=h {
-        for i in 0..=w {
-            if let Some(p) = grid.get(&(i, j)) {
-                match p {
-                    Position::Floor => print!("."),
-                    Position::Occupied => print!("#"),
-                    Position::Empty => print!("L"),
-                }
-            }
+impl From<&char> for Place {
+    fn from(c: &char) -> Self {
+        match c {
+            '.' => Place::Floor,
+            'L' => Place::EmptySeat,
+            '#' => Place::OccupiedSeat,
+            _ => unreachable!(),
         }
-        print!("\n");
     }
 }
 
-fn adjastent_seats(grid: &Grid, x: &i64, y: &i64) -> Vec<Position> {
-    vec![
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-        (0, -1),
-        (0, 1),
-        (1, -1),
-        (1, 0),
-        (1, 1),
-    ]
-    .iter()
-    .map(|(i, j)| (x + i, y + j))
-    .filter_map(|(x, y)| grid.get(&(x, y)))
-    .cloned()
-    .collect()
+impl Display for Place {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Place::Floor => ".",
+                Place::EmptySeat => "L",
+                Place::OccupiedSeat => "#",
+            }
+        )
+    }
 }
 
-fn visible_seats(grid: &Grid, x: &i64, y: &i64) -> Vec<(i64, i64)> {
-    vec![
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(x + r as i64, *y)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(*x, y + r as i64)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(x + r as i64, y + r as i64)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(x - r as i64, y + r as i64)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(x + r as i64, y - r as i64)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(x - r as i64, *y)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(*x, y - r as i64)))
-            .find(|p| *p != &Position::Empty),
-        (0..grid.len())
-            .filter_map(|r| grid.get(&(x - r as i64, y - r as i64)))
-            .find(|p| *p != &Position::Empty),
-    ]
-    .into_iter()
-    .filter_map(|x| x)
-    .cloned()
-    .collect()
+type Position = (i64, i64);
+
+struct Grid {
+    map: HashMap<Position, Place>,
+    width: i64,
+    height: i64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Position {
-    Floor,
-    Empty,
-    Occupied,
-}
+impl Grid {
+    fn new(map: HashMap<Position, Place>) -> Self {
+        let w = map.iter().map(|((x, _), _)| *x).max().unwrap_or(0);
+        let h = map.iter().map(|((_, y), _)| *y).max().unwrap_or(0);
+        Self {
+            map,
+            width: w + 1,
+            height: h + 1,
+        }
+    }
 
-fn parse() -> Grid {
-    INPUT
-        .lines()
-        .enumerate()
-        .map(|(y, l)| {
-            l.chars().enumerate().map(move |(x, c)| match c {
-                '.' => ((x as i64, y as i64), Position::Floor),
-                'L' => ((x as i64, y as i64), Position::Empty),
-                '#' => ((x as i64, y as i64), Position::Occupied),
-                _ => unreachable!(),
+    fn adjacent_seats(&self, x: i64, y: i64) -> Vec<&Place> {
+        DIRECTIONS
+            .iter()
+            .filter_map(|&(dx, dy)| self.map.get(&(x - dx, y - dy)))
+            .collect()
+    }
+
+    fn visible_seats(&self, sx: i64, sy: i64) -> Vec<&Place> {
+        DIRECTIONS
+            .iter()
+            .filter_map(|&(dx, dy)| {
+                let mut x = sx;
+                let mut y = sy;
+                while x >= 0 && x < self.width && y >= 0 && y < self.height {
+                    x += dx;
+                    y += dy;
+
+                    if let Some(p) = self.map.get(&(x, y)) {
+                        if p != &Place::Floor {
+                            return Some(p);
+                        }
+                    } else {
+                        return None;
+                    }
+                }
+
+                return None;
             })
-        })
-        .flatten()
-        .collect()
+            .collect()
+    }
 }
 
-fn round(grid: &Grid) -> Grid {
-    grid.iter()
-        .map(|((x, y), p)| {
-            let new_p = match p {
-                Position::Occupied => {
-                    if adjastent_seats(grid, x, y)
-                        .iter()
-                        .filter(|s| *s == &Position::Occupied)
-                        .count()
-                        > 3
-                    {
-                        Position::Empty
-                    } else {
-                        Position::Occupied
-                    }
-                }
-                Position::Empty => {
-                    if adjastent_seats(grid, x, y)
-                        .iter()
-                        .all(|s| *s != Position::Occupied)
-                    {
-                        Position::Occupied
-                    } else {
-                        Position::Empty
-                    }
-                }
-                Position::Floor => Position::Floor,
-            };
-            ((x.clone(), y.clone()), new_p)
-        })
-        .collect()
+#[derive(Debug)]
+struct ParseGridError {}
+
+impl PartialEq for Grid {
+    fn eq(&self, other: &Self) -> bool {
+        self.map == other.map
+    }
+}
+
+impl FromStr for Grid {
+    type Err = ParseGridError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Grid::new(
+            s.lines()
+                .enumerate()
+                .map(|(y, l)| {
+                    l.chars()
+                        .enumerate()
+                        .map(move |(x, c)| ((x as i64, y as i64), Place::from(&c)))
+                    // .filter(|(_, p)| p != &Place::Floor)
+                })
+                .flatten()
+                .collect(),
+        ))
+    }
+}
+
+impl Display for Grid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            (0..self.height)
+                .map(|y| (0..self.width)
+                    .map(|x| self.map.get(&(x, y)).unwrap_or(&Place::Floor).to_string())
+                    .join(""))
+                .join("\n")
+        )
+    }
 }
 
 pub fn part1() -> usize {
-    let mut grid = parse();
+    let mut grid = Grid::from_str(INPUT).unwrap();
 
     loop {
-        let new_grid = round(&grid);
+        let new_grid = Grid::new(
+            grid.map
+                .iter()
+                .map(|((x, y), p)| {
+                    (
+                        (*x, *y),
+                        match p {
+                            Place::EmptySeat => {
+                                if grid
+                                    .adjacent_seats(*x, *y)
+                                    .iter()
+                                    .all(|&p| p != &Place::OccupiedSeat)
+                                {
+                                    Place::OccupiedSeat
+                                } else {
+                                    Place::EmptySeat
+                                }
+                            }
+                            Place::OccupiedSeat => {
+                                if grid
+                                    .adjacent_seats(*x, *y)
+                                    .iter()
+                                    .filter(|&p| *p == &Place::OccupiedSeat)
+                                    .count()
+                                    > 3
+                                {
+                                    Place::EmptySeat
+                                } else {
+                                    Place::OccupiedSeat
+                                }
+                            }
+                            Place::Floor => Place::Floor,
+                        },
+                    )
+                })
+                .collect(),
+        );
 
         if grid == new_grid {
             break;
@@ -144,55 +192,54 @@ pub fn part1() -> usize {
         grid = new_grid;
     }
 
-    grid.iter()
-        .filter(|(_, s)| *s == &Position::Occupied)
+    grid.map
+        .iter()
+        .filter(|&(_, p)| p == &Place::OccupiedSeat)
         .count()
 }
 
-fn round2(grid: &Grid) -> Grid {
-    grid.iter()
-        .map(|((x, y), p)| {
-            let new_p = match p {
-                Position::Occupied => {
-                    if visible_seats(grid, x, y)
-                        .iter()
-                        .filter(|s| *s == &Position::Occupied)
-                        .count()
-                        > 4
-                    {
-                        Position::Empty
-                    } else {
-                        Position::Occupied
-                    }
-                }
-                Position::Empty => {
-                    if visible_seats(grid, x, y)
-                        .iter()
-                        .all(|s| *s != Position::Occupied)
-                    {
-                        Position::Occupied
-                    } else {
-                        Position::Empty
-                    }
-                }
-                Position::Floor => Position::Floor,
-            };
-            ((x.clone(), y.clone()), new_p)
-        })
-        .collect()
-}
-
 pub fn part2() -> usize {
-    let mut grid = parse();
-
-    display(&grid);
-    print!("\n");
+    let mut grid = Grid::from_str(INPUT).unwrap();
 
     loop {
-        let new_grid = round2(&grid);
-
-        display(&new_grid);
-        print!("\n");
+        // println!("{}\n", grid);
+        let new_grid = Grid::new(
+            grid.map
+                .iter()
+                .map(|((x, y), p)| {
+                    (
+                        (*x, *y),
+                        match p {
+                            Place::EmptySeat => {
+                                if grid
+                                    .visible_seats(*x, *y)
+                                    .iter()
+                                    .all(|&p| p != &Place::OccupiedSeat)
+                                {
+                                    Place::OccupiedSeat
+                                } else {
+                                    Place::EmptySeat
+                                }
+                            }
+                            Place::OccupiedSeat => {
+                                if grid
+                                    .visible_seats(*x, *y)
+                                    .iter()
+                                    .filter(|&p| *p == &Place::OccupiedSeat)
+                                    .count()
+                                    > 4
+                                {
+                                    Place::EmptySeat
+                                } else {
+                                    Place::OccupiedSeat
+                                }
+                            }
+                            Place::Floor => Place::Floor,
+                        },
+                    )
+                })
+                .collect(),
+        );
 
         if grid == new_grid {
             break;
@@ -201,8 +248,9 @@ pub fn part2() -> usize {
         grid = new_grid;
     }
 
-    grid.iter()
-        .filter(|(_, s)| *s == &Position::Occupied)
+    grid.map
+        .iter()
+        .filter(|&(_, p)| p == &Place::OccupiedSeat)
         .count()
 }
 
@@ -212,11 +260,11 @@ mod tests {
 
     #[test]
     fn check_part1_answer() {
-        assert_eq!(part1(), 0);
+        assert_eq!(part1(), 2194);
     }
 
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part2(), 0);
+        assert_eq!(part2(), 1944);
     }
 }
