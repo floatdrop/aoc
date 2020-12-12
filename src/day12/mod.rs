@@ -1,67 +1,78 @@
-use std::unreachable;
+use std::{
+    ops::{Add, AddAssign, Mul},
+    unreachable,
+};
 
 static INPUT: &str = std::include_str!("input.txt");
 
-type Position = (i64, i64);
+#[derive(Clone, Debug)]
+struct Position {
+    x: i64,
+    y: i64,
+}
 
-#[derive(Debug)]
-enum Direction {
-    N,
-    S,
-    W,
-    E,
+type Direction = Position;
+
+fn north(n: i64) -> Direction {
+    Direction { x: 0, y: -n }
+}
+
+fn south(n: i64) -> Direction {
+    Direction { x: 0, y: n }
+}
+
+fn west(n: i64) -> Direction {
+    Direction { x: -n, y: 0 }
+}
+
+fn east(n: i64) -> Direction {
+    Direction { x: n, y: 0 }
+}
+
+impl Add for Direction {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl AddAssign for Direction {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl Mul for Direction {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+        }
+    }
 }
 
 impl Direction {
-    fn next(&self, pos: Position, n: i64) -> Position {
-        match self {
-            Direction::N => (pos.0, pos.1 - n),
-            Direction::S => (pos.0, pos.1 + n),
-            Direction::W => (pos.0 - n, pos.1),
-            Direction::E => (pos.0 + n, pos.1),
+    fn rotate(&mut self, deg: i64) {
+        let rad = (deg as f64).to_radians();
+        *self = Self {
+            x: self.x * (rad.cos() as i64) - self.y * (rad.sin() as i64),
+            y: self.x * (rad.sin() as i64) + self.y * (rad.cos() as i64),
         }
     }
 }
 
-impl From<&str> for Direction {
-    fn from(c: &str) -> Self {
-        match c {
-            "N" => Direction::N,
-            "S" => Direction::S,
-            "W" => Direction::W,
-            "E" => Direction::E,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<i64> for Direction {
-    fn from(deg: i64) -> Self {
-        let norm = (deg % 360) + if deg < 0 { 360 } else { 0 };
-        match norm {
-            0 => Direction::N,
-            90 => Direction::E,
-            180 => Direction::S,
-            270 => Direction::W,
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl From<Direction> for i64 {
-    fn from(d: Direction) -> i64 {
-        match d {
-            Direction::N => 0,
-            Direction::E => 90,
-            Direction::S => 180,
-            Direction::W => 270,
-        }
-    }
-}
-
+#[derive(Clone, Debug)]
 struct Ship {
     pos: Position,
-    wyp: Position,
     dir: Direction,
 }
 
@@ -74,30 +85,25 @@ pub fn part1() -> i64 {
         })
         .fold(
             Ship {
-                pos: (0, 0),
-                wyp: (0, 0),
-                dir: Direction::E,
+                pos: Position { x: 0, y: 0 },
+                dir: east(1),
             },
             |mut ship, (c, n)| {
                 match c {
-                    "L" => ship.dir = Direction::from(i64::from(ship.dir) - n),
-                    "R" => ship.dir = Direction::from(i64::from(ship.dir) + n),
-                    "F" => ship.pos = ship.dir.next(ship.pos, n),
-                    "N" | "S" | "W" | "E" => ship.pos = Direction::from(c).next(ship.pos, n),
+                    "L" => ship.dir.rotate(-n),
+                    "R" => ship.dir.rotate(n),
+                    "F" => ship.pos += ship.dir.clone() * Direction { x: n, y: n },
+                    "N" => ship.pos += north(n),
+                    "S" => ship.pos += south(n),
+                    "W" => ship.pos += west(n),
+                    "E" => ship.pos += east(n),
                     _ => unreachable!(),
                 };
                 ship
             },
         );
 
-    ship.pos.0.abs() + ship.pos.1.abs()
-}
-
-fn rotate(wp: Position, deg: f64) -> Position {
-    (
-        wp.0 * (deg.to_radians().cos() as i64) - wp.1 * (deg.to_radians().sin() as i64),
-        wp.0 * (deg.to_radians().sin() as i64) + wp.1 * (deg.to_radians().cos() as i64),
-    )
+    ship.pos.x.abs() + ship.pos.y.abs()
 }
 
 pub fn part2() -> i64 {
@@ -109,24 +115,25 @@ pub fn part2() -> i64 {
         })
         .fold(
             Ship {
-                pos: (0, 0),
-                wyp: Direction::N.next(Direction::E.next((0, 0), 10), 1),
-                dir: Direction::E,
+                pos: Position { x: 0, y: 0 },
+                dir: east(10) + north(1),
             },
             |mut ship, (c, n)| {
                 match c {
-                    "L" => ship.wyp = rotate(ship.wyp, -n as f64),
-                    "R" => ship.wyp = rotate(ship.wyp, n as f64),
-                    "F" => ship.pos = (ship.pos.0 + ship.wyp.0 * n, ship.pos.1 + ship.wyp.1 * n),
-                    "N" | "S" | "W" | "E" => ship.wyp = Direction::from(c).next(ship.wyp, n),
+                    "L" => ship.dir.rotate(-n),
+                    "R" => ship.dir.rotate(n),
+                    "F" => ship.pos += ship.dir.clone() * Direction { x: n, y: n },
+                    "N" => ship.dir += north(n),
+                    "S" => ship.dir += south(n),
+                    "W" => ship.dir += west(n),
+                    "E" => ship.dir += east(n),
                     _ => unreachable!(),
                 };
-                println!("{}{}\tpos:{} {}", c, n, ship.pos.0, ship.pos.1);
                 ship
             },
         );
 
-    ship.pos.0.abs() + ship.pos.1.abs()
+    ship.pos.x.abs() + ship.pos.y.abs()
 }
 
 #[cfg(test)]
@@ -135,11 +142,11 @@ mod tests {
 
     #[test]
     fn check_part1_answer() {
-        assert_eq!(part1(), 2194);
+        assert_eq!(part1(), 362);
     }
 
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part2(), 1944);
+        assert_eq!(part2(), 29895);
     }
 }
