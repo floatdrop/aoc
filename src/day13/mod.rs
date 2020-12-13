@@ -32,22 +32,18 @@ pub fn part2() -> usize {
         .filter_map(|(t, n)| n.parse::<usize>().ok().and_then(|i| Some((t, i))))
         .collect();
 
-    println!("{:?}", ids);
-
-    let mut offset: usize = 0;
-    loop {
-        let mismatch = ids
-            .iter()
-            .filter(|(t, id)| (offset + t) % id != 0)
-            .max_by(|lhs, rhs| lhs.1.cmp(&rhs.1));
-        if let Some(b) = mismatch {
-            offset = (((offset + b.0) / b.1 + 1) * b.1) - b.0;
-            continue;
-        }
-        break;
-    }
-
-    offset
+    ids.iter()
+        .fold(
+            (0, 1),
+            |(solution_so_far, product_so_far), (remainder, bus_id)| {
+                let mut m = solution_so_far;
+                while (m + remainder) % bus_id != 0 {
+                    m += product_so_far;
+                }
+                (m, product_so_far * bus_id)
+            },
+        )
+        .0
 }
 
 #[cfg(test)]
