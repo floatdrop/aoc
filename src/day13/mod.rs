@@ -52,11 +52,11 @@ mod tests {
 
     #[test]
     fn check_part1_answer() {
-        assert_eq!(part1(), 0);
+        assert_eq!(part1(), 174);
     }
 
     #[test]
     fn check_part2_answer() {
-        assert_eq!(part2(), 0);
+        assert_eq!(part2(), 780601154795940);
     }
 }
